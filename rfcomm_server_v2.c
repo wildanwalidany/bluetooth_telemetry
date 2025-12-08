@@ -105,16 +105,16 @@ static void print_telemetry(const telemetry_t *telem) {
     printf("\n╔══════════════════════════════════════════════════════════╗\n");
     printf("║                 TELEMETRY DATA RECEIVED                  ║\n");
     printf("╠══════════════════════════════════════════════════════════╣\n");
-    printf("║ Speed:          %3d (RPM: ~%d)                          ║\n", 
-           telem->speed, telem->speed * 46);
+    printf("║ Speed:          %d RPM                                   ║\n", 
+           telem->speed * 46);
     printf("║ Throttle:       %3d                                      ║\n", 
            telem->throttle);
-    printf("║ Odometer:       %5d miles (%.1f km)                     ║\n", 
-           telem->total_miles, telem->total_miles * 1.60934);
+    printf("║ Odometer:       %.1f km                                 ║\n", 
+           telem->total_miles * 1.60934);
     printf("║ Battery:        %3d%%                                    ║\n", 
            telem->battery);
-    printf("║ Engine Temp:    %3d (display: %d°C)                     ║\n", 
-           telem->engine_temp, (int)telem->engine_temp - 20);
+    printf("║ Engine Temp:    %d°C                                     ║\n", 
+           (int)telem->engine_temp - 20);
     printf("║ Battery Temp:   %3d                                      ║\n", 
            telem->battery_temp);
     printf("║ State:          %s                                       ║\n", 
