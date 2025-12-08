@@ -1,0 +1,16 @@
+cara compile nya: gcc -o bt-client bt-client.c -lbluetooth
+
+sudo ./bt-client --addr 74:70:FD:0D:CA:45 --channel 1 --verbose
+
+sudo ./rfcomm_server -e -x
+
+bluetoothctl
+power agent on 
+default-agent
+pairable on
+discoverable on
+scan on
+
+pair XX:XX 
+trust XX:XX
+connect XX:XX 
