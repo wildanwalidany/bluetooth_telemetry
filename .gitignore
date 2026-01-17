@@ -1,1 +1,40 @@
+# Test directory
 /test
+
+# Compiled binaries
+bt-client
+rfcomm_server_v2
+rfcomm_server
+
+# Qt build directories
+GUI/build/
+GUI/.qt/
+GUI/BluetoothTelemetryGUI_autogen/
+
+# Qt generated files
+GUI/*.user
+GUI/*.pro.user
+GUI/moc_*.cpp
+GUI/qrc_*.cpp
+GUI/ui_*.h
+GUI/Makefile
+
+# CMake files
+GUI/CMakeCache.txt
+GUI/CMakeFiles/
+GUI/cmake_install.cmake
+
+# Object files
+*.o
+*.obj
+
+# Editor and IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
