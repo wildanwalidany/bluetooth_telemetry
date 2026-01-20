@@ -8,6 +8,7 @@
 #include <QFont>
 #include <QScrollBar>
 #include <QMessageBox>
+#include <QPalette>
 
 #include <sys/socket.h>
 #include <bluetooth/bluetooth.h>
@@ -27,11 +28,13 @@ MainWindow::MainWindow(QWidget *parent)
       echoMode(false),
       hexMode(false),
       msgCount(0),
-      totalBytes(0)
+      totalBytes(0),
+      blinkAnimation(nullptr)
 {
-    setWindowTitle("Bluetooth Telemetry RFCOMM Server");
-    setGeometry(100, 100, 1000, 800);
+    setWindowTitle("Bluetooth Telemetry Server - Modern UI");
+    setGeometry(100, 100, 1200, 900);
     
+    applyModernStyle();
     setupUI();
     
     // Timer to check client connection status
@@ -50,17 +53,83 @@ void MainWindow::setupUI()
     setCentralWidget(centralWidget);
     
     QVBoxLayout *mainLayout = new QVBoxLayout(centralWidget);
+    mainLayout->setSpacing(15);
+    mainLayout->setContentsMargins(20, 20, 20, 20);
     
-    // Control panel
+    // Control panel with modern styling
     QGroupBox *controlGroup = new QGroupBox("Server Control", this);
+    controlGroup->setStyleSheet(
+        "QGroupBox { "
+        "  font-weight: bold; "
+        "  font-size: 14px; "
+        "  border: 2px solid #3498db; "
+        "  border-radius: 8px; "
+        "  margin-top: 10px; "
+        "  padding-top: 15px; "
+        "} "
+        "QGroupBox::title { "
+        "  subcontrol-origin: margin; "
+        "  subcontrol-position: top left; "
+        "  padding: 0 10px; "
+        "  color: #3498db; "
+        "}"
+    );
     QHBoxLayout *controlLayout = new QHBoxLayout(controlGroup);
+    controlLayout->setSpacing(15);
     
-    startButton = new QPushButton("Start Server", this);
-    stopButton = new QPushButton("Stop Server", this);
+    startButton = new QPushButton("▶ Start Server", this);
+    startButton->setMinimumHeight(40);
+    startButton->setStyleSheet(
+        "QPushButton { "
+        "  background-color: #27ae60; "
+        "  color: white; "
+        "  font-size: 14px; "
+        "  font-weight: bold; "
+        "  border: none; "
+        "  border-radius: 6px; "
+        "  padding: 10px 20px; "
+        "} "
+        "QPushButton:hover { "
+        "  background-color: #2ecc71; "
+        "} "
+        "QPushButton:pressed { "
+        "  background-color: #229954; "
+        "} "
+        "QPushButton:disabled { "
+        "  background-color: #95a5a6; "
+        "}"
+    );
+    
+    stopButton = new QPushButton("⏹ Stop Server", this);
     stopButton->setEnabled(false);
+    stopButton->setMinimumHeight(40);
+    stopButton->setStyleSheet(
+        "QPushButton { "
+        "  background-color: #e74c3c; "
+        "  color: white; "
+        "  font-size: 14px; "
+        "  font-weight: bold; "
+        "  border: none; "
+        "  border-radius: 6px; "
+        "  padding: 10px 20px; "
+        "} "
+        "QPushButton:hover { "
+        "  background-color: #ec7063; "
+        "} "
+        "QPushButton:pressed { "
+        "  background-color: #c0392b; "
+        "} "
+        "QPushButton:disabled { "
+        "  background-color: #95a5a6; "
+        "}"
+    );
+    
     echoModeCheck = new QCheckBox("Echo Mode", this);
+    echoModeCheck->setStyleSheet("QCheckBox { font-size: 13px; padding: 5px; }");
+    
     hexModeCheck = new QCheckBox("Hex Output", this);
     hexModeCheck->setChecked(true);
+    hexModeCheck->setStyleSheet("QCheckBox { font-size: 13px; padding: 5px; }");
     
     controlLayout->addWidget(startButton);
     controlLayout->addWidget(stopButton);
@@ -73,17 +142,50 @@ void MainWindow::setupUI()
     
     mainLayout->addWidget(controlGroup);
     
-    // Status
+    // Status with visual indicator
     QGroupBox *statusGroup = new QGroupBox("Connection Status", this);
-    QVBoxLayout *statusLayout = new QVBoxLayout(statusGroup);
+    statusGroup->setStyleSheet(
+        "QGroupBox { "
+        "  font-weight: bold; "
+        "  font-size: 14px; "
+        "  border: 2px solid #9b59b6; "
+        "  border-radius: 8px; "
+        "  margin-top: 10px; "
+        "  padding-top: 15px; "
+        "} "
+        "QGroupBox::title { "
+        "  subcontrol-origin: margin; "
+        "  subcontrol-position: top left; "
+        "  padding: 0 10px; "
+        "  color: #9b59b6; "
+        "}"
+    );
+    QHBoxLayout *statusLayout = new QHBoxLayout(statusGroup);
+    statusLayout->setSpacing(15);
+    
+    statusIndicator = new QLabel("●", this);
+    statusIndicator->setStyleSheet(
+        "QLabel { "
+        "  color: #95a5a6; "
+        "  font-size: 32px; "
+        "  padding: 0 10px; "
+        "}"
+    );
+    
+    QVBoxLayout *statusTextLayout = new QVBoxLayout();
     statusLabel = new QLabel("Server: Stopped", this);
+    statusLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; color: #2c3e50; }");
+    
     clientAddressLabel = new QLabel("Client: None", this);
-    QFont boldFont;
-    boldFont.setBold(true);
-    statusLabel->setFont(boldFont);
-    clientAddressLabel->setFont(boldFont);
-    statusLayout->addWidget(statusLabel);
-    statusLayout->addWidget(clientAddressLabel);
+    clientAddressLabel->setStyleSheet("QLabel { font-size: 13px; color: #34495e; }");
+    
+    statusTextLayout->addWidget(statusLabel);
+    statusTextLayout->addWidget(clientAddressLabel);
+    
+    statusLayout->addWidget(statusIndicator);
+    statusLayout->addLayout(statusTextLayout);
+    statusLayout->addStretch();
+    
     mainLayout->addWidget(statusGroup);
     
     // Telemetry display
@@ -98,104 +200,292 @@ void MainWindow::setupUI()
     
     // Log output
     QGroupBox *logGroup = new QGroupBox("Server Log", this);
+    logGroup->setStyleSheet(
+        "QGroupBox { "
+        "  font-weight: bold; "
+        "  font-size: 14px; "
+        "  border: 2px solid #e67e22; "
+        "  border-radius: 8px; "
+        "  margin-top: 10px; "
+        "  padding-top: 15px; "
+        "} "
+        "QGroupBox::title { "
+        "  subcontrol-origin: margin; "
+        "  subcontrol-position: top left; "
+        "  padding: 0 10px; "
+        "  color: #e67e22; "
+        "}"
+    );
     QVBoxLayout *logLayout = new QVBoxLayout(logGroup);
     logOutput = new QTextEdit(this);
     logOutput->setReadOnly(true);
     logOutput->setMaximumHeight(200);
+    logOutput->setStyleSheet(
+        "QTextEdit { "
+        "  background-color: #2c3e50; "
+        "  color: #ecf0f1; "
+        "  font-family: 'Courier New', monospace; "
+        "  font-size: 12px; "
+        "  border: 1px solid #34495e; "
+        "  border-radius: 4px; "
+        "  padding: 10px; "
+        "}"
+    );
     logLayout->addWidget(logOutput);
     mainLayout->addWidget(logGroup);
 }
 
 void MainWindow::createTelemetryGroup(QGroupBox *&group)
 {
-    group = new QGroupBox("Telemetry Data", this);
+    group = new QGroupBox("Real-Time Telemetry", this);
+    group->setStyleSheet(
+        "QGroupBox { "
+        "  font-weight: bold; "
+        "  font-size: 14px; "
+        "  border: 2px solid #16a085; "
+        "  border-radius: 8px; "
+        "  margin-top: 10px; "
+        "  padding-top: 15px; "
+        "} "
+        "QGroupBox::title { "
+        "  subcontrol-origin: margin; "
+        "  subcontrol-position: top left; "
+        "  padding: 0 10px; "
+        "  color: #16a085; "
+        "}"
+    );
+    
     QGridLayout *layout = new QGridLayout(group);
+    layout->setSpacing(12);
+    layout->setContentsMargins(15, 20, 15, 15);
     
     int row = 0;
     
-    // Speed
-    layout->addWidget(new QLabel("<b>Speed:</b>", this), row, 0);
+    // Speed - Large display
+    QLabel *speedTitle = new QLabel("⚡ Speed:", this);
+    speedTitle->setStyleSheet("QLabel { font-size: 13px; font-weight: bold; color: #2c3e50; }");
+    layout->addWidget(speedTitle, row, 0);
     speedLabel = new QLabel("-- RPM", this);
-    layout->addWidget(speedLabel, row++, 1);
+    speedLabel->setStyleSheet(
+        "QLabel { "
+        "  font-size: 24px; "
+        "  font-weight: bold; "
+        "  color: #3498db; "
+        "  background-color: #ecf0f1; "
+        "  border-radius: 6px; "
+        "  padding: 10px 20px; "
+        "}"
+    );
+    layout->addWidget(speedLabel, row++, 1, 1, 3);
     
     // Throttle
-    layout->addWidget(new QLabel("<b>Throttle:</b>", this), row, 0);
+    layout->addWidget(new QLabel("⏱ Throttle:", this), row, 0);
     throttleLabel = new QLabel("--", this);
+    throttleLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; color: #34495e; padding: 5px; }");
     layout->addWidget(throttleLabel, row++, 1);
     
     // Odometer
-    layout->addWidget(new QLabel("<b>Odometer:</b>", this), row, 0);
+    layout->addWidget(new QLabel("👋 Odometer:", this), row, 0);
     odometerLabel = new QLabel("-- km", this);
+    odometerLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; color: #34495e; padding: 5px; }");
     layout->addWidget(odometerLabel, row++, 1);
     
-    // Battery
-    layout->addWidget(new QLabel("<b>Battery:</b>", this), row, 0);
+    // Battery with progress bar
+    layout->addWidget(new QLabel("🔋 Battery:", this), row, 0);
+    QHBoxLayout *batteryLayout = new QHBoxLayout();
     batteryLabel = new QLabel("--%", this);
-    layout->addWidget(batteryLabel, row++, 1);
+    batteryLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; color: #27ae60; padding: 5px; min-width: 50px; }");
+    batteryBar = new QProgressBar(this);
+    batteryBar->setRange(0, 100);
+    batteryBar->setTextVisible(false);
+    batteryBar->setMaximumHeight(20);
+    batteryBar->setStyleSheet(
+        "QProgressBar { "
+        "  border: 2px solid #bdc3c7; "
+        "  border-radius: 5px; "
+        "  background-color: #ecf0f1; "
+        "} "
+        "QProgressBar::chunk { "
+        "  background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #27ae60, stop:1 #2ecc71); "
+        "  border-radius: 3px; "
+        "}"
+    );
+    batteryLayout->addWidget(batteryLabel);
+    batteryLayout->addWidget(batteryBar);
+    layout->addLayout(batteryLayout, row++, 1, 1, 3);
     
-    // Engine Temp
-    layout->addWidget(new QLabel("<b>Engine Temp:</b>", this), row, 0);
+    // Engine Temp with progress bar and color coding
+    layout->addWidget(new QLabel("🌡️ Engine Temp:", this), row, 0);
+    QHBoxLayout *tempLayout = new QHBoxLayout();
     engineTempLabel = new QLabel("-- °C", this);
-    layout->addWidget(engineTempLabel, row++, 1);
+    engineTempLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; padding: 5px; min-width: 60px; }");
+    engineTempBar = new QProgressBar(this);
+    engineTempBar->setRange(-20, 43);
+    engineTempBar->setTextVisible(false);
+    engineTempBar->setMaximumHeight(20);
+    engineTempBar->setStyleSheet(
+        "QProgressBar { "
+        "  border: 2px solid #bdc3c7; "
+        "  border-radius: 5px; "
+        "  background-color: #ecf0f1; "
+        "} "
+        "QProgressBar::chunk { "
+        "  background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #3498db, stop:0.5 #f39c12, stop:1 #e74c3c); "
+        "  border-radius: 3px; "
+        "}"
+    );
+    tempLayout->addWidget(engineTempLabel);
+    tempLayout->addWidget(engineTempBar);
+    layout->addLayout(tempLayout, row++, 1, 1, 3);
     
     // Battery Temp
-    layout->addWidget(new QLabel("<b>Battery Temp:</b>", this), row, 0);
+    layout->addWidget(new QLabel("🌡️ Battery Temp:", this), row, 0);
     batteryTempLabel = new QLabel("--", this);
+    batteryTempLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; color: #34495e; padding: 5px; }");
     layout->addWidget(batteryTempLabel, row++, 1);
     
+    // Second column - State indicators
     row = 0;
-    // State
-    layout->addWidget(new QLabel("<b>State:</b>", this), row, 2);
+    
+    // State with styled frame
+    layout->addWidget(new QLabel("⚙️ State:", this), row, 4);
+    QHBoxLayout *stateLayout = new QHBoxLayout();
+    stateFrame = createIndicatorFrame();
     stateLabel = new QLabel("--", this);
-    layout->addWidget(stateLabel, row++, 3);
+    stateLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; padding: 5px; }");
+    stateLayout->addWidget(stateFrame);
+    stateLayout->addWidget(stateLabel);
+    stateLayout->addStretch();
+    layout->addLayout(stateLayout, row++, 5);
     
-    // Mode
-    layout->addWidget(new QLabel("<b>Mode:</b>", this), row, 2);
+    // Mode with styled frame
+    layout->addWidget(new QLabel("🏎️ Mode:", this), row, 4);
+    QHBoxLayout *modeLayout = new QHBoxLayout();
+    modeFrame = createIndicatorFrame();
     modeLabel = new QLabel("--", this);
-    layout->addWidget(modeLabel, row++, 3);
+    modeLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; padding: 5px; }");
+    modeLayout->addWidget(modeFrame);
+    modeLayout->addWidget(modeLabel);
+    modeLayout->addStretch();
+    layout->addLayout(modeLayout, row++, 5);
     
-    // Turn Signal
-    layout->addWidget(new QLabel("<b>Turn Signal:</b>", this), row, 2);
+    // Turn Signal with indicator
+    layout->addWidget(new QLabel("➡️ Turn Signal:", this), row, 4);
+    QHBoxLayout *turnLayout = new QHBoxLayout();
+    turnSignalFrame = createIndicatorFrame();
     turnSignalLabel = new QLabel("--", this);
-    layout->addWidget(turnSignalLabel, row++, 3);
+    turnSignalLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; padding: 5px; }");
+    turnLayout->addWidget(turnSignalFrame);
+    turnLayout->addWidget(turnSignalLabel);
+    turnLayout->addStretch();
+    layout->addLayout(turnLayout, row++, 5);
     
-    // Night Mode
-    layout->addWidget(new QLabel("<b>Night Mode:</b>", this), row, 2);
-    nightModeLabel = new QLabel("--", this);
-    layout->addWidget(nightModeLabel, row++, 3);
+    // Night Mode with indicator
+    layout->addWidget(new QLabel("🌙 Night Mode:", this), row, 4);
+    QHBoxLayout *nightLayout = new QHBoxLayout();
+    nightModeFrame = createIndicatorFrame();
+    nightModeLabel = new QLabel("OFF", this);
+    nightModeLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; padding: 5px; }");
+    nightLayout->addWidget(nightModeFrame);
+    nightLayout->addWidget(nightModeLabel);
+    nightLayout->addStretch();
+    layout->addLayout(nightLayout, row++, 5);
     
-    // High Beam
-    layout->addWidget(new QLabel("<b>High Beam:</b>", this), row, 2);
-    beamLabel = new QLabel("--", this);
-    layout->addWidget(beamLabel, row++, 3);
+    // High Beam with indicator
+    layout->addWidget(new QLabel("💡 High Beam:", this), row, 4);
+    QHBoxLayout *beamLayout = new QHBoxLayout();
+    beamFrame = createIndicatorFrame();
+    beamLabel = new QLabel("OFF", this);
+    beamLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; padding: 5px; }");
+    beamLayout->addWidget(beamFrame);
+    beamLayout->addWidget(beamLabel);
+    beamLayout->addStretch();
+    layout->addLayout(beamLayout, row++, 5);
     
-    // Horn
-    layout->addWidget(new QLabel("<b>Horn:</b>", this), row, 2);
-    hornLabel = new QLabel("--", this);
-    layout->addWidget(hornLabel, row++, 3);
+    // Horn with indicator
+    layout->addWidget(new QLabel("📢 Horn:", this), row, 4);
+    QHBoxLayout *hornLayout = new QHBoxLayout();
+    hornFrame = createIndicatorFrame();
+    hornLabel = new QLabel("OFF", this);
+    hornLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; padding: 5px; }");
+    hornLayout->addWidget(hornFrame);
+    hornLayout->addWidget(hornLabel);
+    hornLayout->addStretch();
+    layout->addLayout(hornLayout, row++, 5);
     
     // Alert
-    layout->addWidget(new QLabel("<b>Alert:</b>", this), row, 2);
+    layout->addWidget(new QLabel("⚠️ Alert:", this), row, 4);
     alertLabel = new QLabel("--", this);
-    layout->addWidget(alertLabel, row++, 3);
+    alertLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; color: #e74c3c; padding: 5px; }");
+    layout->addWidget(alertLabel, row++, 5);
     
     // Maps
-    layout->addWidget(new QLabel("<b>Maps:</b>", this), row, 2);
+    layout->addWidget(new QLabel("🗺️ Maps:", this), row, 4);
     mapsLabel = new QLabel("--", this);
-    layout->addWidget(mapsLabel, row++, 3);
+    mapsLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; color: #34495e; padding: 5px; }");
+    layout->addWidget(mapsLabel, row++, 5);
 }
 
 void MainWindow::createStatsGroup(QGroupBox *&group)
 {
     group = new QGroupBox("Statistics", this);
-    QHBoxLayout *layout = new QHBoxLayout(group);
+    group->setStyleSheet(
+        "QGroupBox { "
+        "  font-weight: bold; "
+        "  font-size: 14px; "
+        "  border: 2px solid #f39c12; "
+        "  border-radius: 8px; "
+        "  margin-top: 10px; "
+        "  padding-top: 15px; "
+        "} "
+        "QGroupBox::title { "
+        "  subcontrol-origin: margin; "
+        "  subcontrol-position: top left; "
+        "  padding: 0 10px; "
+        "  color: #f39c12; "
+        "}"
+    );
     
-    layout->addWidget(new QLabel("<b>Messages:</b>", this));
+    QHBoxLayout *layout = new QHBoxLayout(group);
+    layout->setSpacing(20);
+    layout->setContentsMargins(15, 20, 15, 15);
+    
+    QLabel *msgTitle = new QLabel("📨 Messages:", this);
+    msgTitle->setStyleSheet("QLabel { font-size: 13px; font-weight: bold; color: #2c3e50; }");
+    layout->addWidget(msgTitle);
+    
     msgCountLabel = new QLabel("0", this);
+    msgCountLabel->setStyleSheet(
+        "QLabel { "
+        "  font-size: 18px; "
+        "  font-weight: bold; "
+        "  color: #3498db; "
+        "  background-color: #ecf0f1; "
+        "  border-radius: 5px; "
+        "  padding: 8px 15px; "
+        "  min-width: 80px; "
+        "}"
+    );
     layout->addWidget(msgCountLabel);
     
-    layout->addWidget(new QLabel("<b>Total Bytes:</b>", this));
+    layout->addSpacing(30);
+    
+    QLabel *bytesTitle = new QLabel("📊 Total Bytes:", this);
+    bytesTitle->setStyleSheet("QLabel { font-size: 13px; font-weight: bold; color: #2c3e50; }");
+    layout->addWidget(bytesTitle);
+    
     totalBytesLabel = new QLabel("0", this);
+    totalBytesLabel->setStyleSheet(
+        "QLabel { "
+        "  font-size: 18px; "
+        "  font-weight: bold; "
+        "  color: #27ae60; "
+        "  background-color: #ecf0f1; "
+        "  border-radius: 5px; "
+        "  padding: 8px 15px; "
+        "  min-width: 100px; "
+        "}"
+    );
     layout->addWidget(totalBytesLabel);
     
     layout->addStretch();
@@ -213,7 +503,9 @@ void MainWindow::onStartServer()
         echoModeCheck->setEnabled(false);
         hexModeCheck->setEnabled(false);
         
+        updateStatusIndicator(true, false);
         statusLabel->setText("Server: Running on channel 1");
+        statusLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; color: #27ae60; }");
         logMessage("[INFO] RFCOMM server started successfully");
         logMessage(QString("[INFO] Echo mode: %1, Hex output: %2")
                    .arg(echoMode ? "ON" : "OFF")
@@ -233,7 +525,9 @@ void MainWindow::onStopServer()
     echoModeCheck->setEnabled(true);
     hexModeCheck->setEnabled(true);
     
+    updateStatusIndicator(false, false);
     statusLabel->setText("Server: Stopped");
+    statusLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; color: #2c3e50; }");
     clientAddressLabel->setText("Client: None");
     logMessage("[INFO] Server stopped");
 }
@@ -323,6 +617,8 @@ void MainWindow::acceptClientConnection()
     
     ba2str(&rem_addr.rc_bdaddr, addr);
     clientAddressLabel->setText(QString("Client: %1").arg(addr));
+    clientAddressLabel->setStyleSheet("QLabel { font-size: 13px; color: #27ae60; font-weight: bold; }");
+    updateStatusIndicator(true, true);
     logMessage(QString("%1 [INFO] Client connected: %2").arg(getTimestamp()).arg(addr));
     
     msgCount = 0;
@@ -377,6 +673,8 @@ void MainWindow::handleClientData()
         ::close(clientSocket);
         clientSocket = -1;
         clientAddressLabel->setText("Client: Disconnected");
+        clientAddressLabel->setStyleSheet("QLabel { font-size: 13px; color: #e74c3c; font-weight: bold; }");
+        updateStatusIndicator(true, false);
         clientCheckTimer->stop();
         return;
     }
@@ -464,19 +762,113 @@ void MainWindow::displayTelemetry(const telemetry_t *telem)
     const char *mode_str[] = {"", "ECON", "COMF", "SPORT"};
     const char *signal_str[] = {"none", "right", "left", "hazard"};
     
-    speedLabel->setText(QString("%1 RPM").arg(telem->speed * 46));
+    // Speed - prominent display
+    int rpm = telem->speed * 46;
+    speedLabel->setText(QString("%1 RPM").arg(rpm));
+    if (rpm > 8000) {
+        speedLabel->setStyleSheet(
+            "QLabel { font-size: 24px; font-weight: bold; color: #e74c3c; "
+            "background-color: #fadbd8; border-radius: 6px; padding: 10px 20px; }");
+    } else if (rpm > 5000) {
+        speedLabel->setStyleSheet(
+            "QLabel { font-size: 24px; font-weight: bold; color: #f39c12; "
+            "background-color: #fef5e7; border-radius: 6px; padding: 10px 20px; }");
+    } else {
+        speedLabel->setStyleSheet(
+            "QLabel { font-size: 24px; font-weight: bold; color: #3498db; "
+            "background-color: #ecf0f1; border-radius: 6px; padding: 10px 20px; }");
+    }
+    
+    // Throttle
     throttleLabel->setText(QString::number(telem->throttle));
+    
+    // Odometer
     odometerLabel->setText(QString("%1 km").arg(telem->total_miles * 1.60934, 0, 'f', 1));
+    
+    // Battery with progress bar and color coding
     batteryLabel->setText(QString("%1%").arg(telem->battery));
-    engineTempLabel->setText(QString("%1 °C").arg((int)telem->engine_temp - 20));
+    batteryBar->setValue(telem->battery);
+    if (telem->battery < 20) {
+        batteryLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; color: #e74c3c; padding: 5px; min-width: 50px; }");
+        batteryBar->setStyleSheet(
+            "QProgressBar { border: 2px solid #e74c3c; border-radius: 5px; background-color: #fadbd8; } "
+            "QProgressBar::chunk { background-color: #e74c3c; border-radius: 3px; }");
+    } else if (telem->battery < 50) {
+        batteryLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; color: #f39c12; padding: 5px; min-width: 50px; }");
+        batteryBar->setStyleSheet(
+            "QProgressBar { border: 2px solid #f39c12; border-radius: 5px; background-color: #fef5e7; } "
+            "QProgressBar::chunk { background-color: #f39c12; border-radius: 3px; }");
+    } else {
+        batteryLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; color: #27ae60; padding: 5px; min-width: 50px; }");
+        batteryBar->setStyleSheet(
+            "QProgressBar { border: 2px solid #bdc3c7; border-radius: 5px; background-color: #ecf0f1; } "
+            "QProgressBar::chunk { background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #27ae60, stop:1 #2ecc71); border-radius: 3px; }");
+    }
+    
+    // Engine Temperature with bar and color coding
+    int engineTemp = (int)telem->engine_temp - 20;
+    engineTempLabel->setText(QString("%1 °C").arg(engineTemp));
+    engineTempBar->setValue(engineTemp);
+    if (engineTemp > 90) {
+        engineTempLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; color: #e74c3c; padding: 5px; min-width: 60px; }");
+    } else if (engineTemp > 70) {
+        engineTempLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; color: #f39c12; padding: 5px; min-width: 60px; }");
+    } else {
+        engineTempLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; color: #3498db; padding: 5px; min-width: 60px; }");
+    }
+    
+    // Battery Temp
     batteryTempLabel->setText(QString::number(telem->battery_temp));
-    stateLabel->setText(state_str[telem->state]);
+    
+    // State with indicator
+    updateIndicatorState(stateFrame, stateLabel, telem->state > 0, state_str[telem->state]);
+    
+    // Mode with color coding
     modeLabel->setText(mode_str[telem->mode]);
+    QString modeColor;
+    switch(telem->mode) {
+        case 1: modeColor = "#27ae60"; break; // ECON - green
+        case 2: modeColor = "#3498db"; break; // COMF - blue
+        case 3: modeColor = "#e74c3c"; break; // SPORT - red
+        default: modeColor = "#95a5a6"; break;
+    }
+    modeFrame->setStyleSheet(QString(
+        "QFrame { background-color: %1; border-radius: 8px; min-width: 16px; max-width: 16px; "
+        "min-height: 16px; max-height: 16px; }").arg(modeColor));
+    
+    // Turn Signal with animated indicator
     turnSignalLabel->setText(signal_str[telem->turn_signal]);
-    nightModeLabel->setText(telem->night_mode ? "ON" : "OFF");
-    beamLabel->setText(telem->beam ? "ON" : "OFF");
-    hornLabel->setText(telem->horn ? "ON" : "OFF");
+    bool turnActive = (telem->turn_signal > 0);
+    if (turnActive) {
+        QString turnColor = (telem->turn_signal == 3) ? "#f39c12" : "#2ecc71"; // hazard=orange, else=green
+        turnSignalFrame->setStyleSheet(QString(
+            "QFrame { background-color: %1; border-radius: 8px; min-width: 16px; max-width: 16px; "
+            "min-height: 16px; max-height: 16px; }").arg(turnColor));
+    } else {
+        turnSignalFrame->setStyleSheet(
+            "QFrame { background-color: #95a5a6; border-radius: 8px; min-width: 16px; max-width: 16px; "
+            "min-height: 16px; max-height: 16px; }");
+    }
+    
+    // Night Mode
+    updateIndicatorState(nightModeFrame, nightModeLabel, telem->night_mode, telem->night_mode ? "ON" : "OFF");
+    
+    // High Beam
+    updateIndicatorState(beamFrame, beamLabel, telem->beam, telem->beam ? "ON" : "OFF");
+    
+    // Horn
+    updateIndicatorState(hornFrame, hornLabel, telem->horn, telem->horn ? "ON" : "OFF");
+    
+    // Alert
     alertLabel->setText(QString::number(telem->alert));
+    if (telem->alert > 0) {
+        alertLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; color: #e74c3c; "
+                                   "background-color: #fadbd8; padding: 5px 10px; border-radius: 4px; }");
+    } else {
+        alertLabel->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; color: #27ae60; padding: 5px; }");
+    }
+    
+    // Maps
     mapsLabel->setText(telem->maps ? "ON" : "OFF");
 }
 
@@ -501,3 +893,76 @@ QString MainWindow::getTimestamp()
 {
     return QDateTime::currentDateTime().toString("[HH:mm:ss]");
 }
+
+void MainWindow::applyModernStyle()
+{
+    // Set modern application-wide style
+    setStyleSheet(
+        "QMainWindow { background-color: #f5f6fa; }"
+        "QWidget { font-family: 'Segoe UI', Arial, sans-serif; }"
+        "QLabel { color: #2c3e50; }"
+        "QGroupBox { background-color: white; }"
+    );
+}
+
+QFrame* MainWindow::createIndicatorFrame()
+{
+    QFrame *frame = new QFrame(this);
+    frame->setFrameShape(QFrame::NoFrame);
+    frame->setStyleSheet(
+        "QFrame { "
+        "  background-color: #95a5a6; "
+        "  border-radius: 8px; "
+        "  min-width: 16px; "
+        "  max-width: 16px; "
+        "  min-height: 16px; "
+        "  max-height: 16px; "
+        "}"
+    );
+    return frame;
+}
+
+void MainWindow::updateIndicatorState(QFrame *frame, QLabel *label, bool active, const QString &text)
+{
+    if (active) {
+        frame->setStyleSheet(
+            "QFrame { "
+            "  background-color: #2ecc71; "
+            "  border-radius: 8px; "
+            "  min-width: 16px; "
+            "  max-width: 16px; "
+            "  min-height: 16px; "
+            "  max-height: 16px; "
+            "}"
+        );
+        label->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; color: #27ae60; padding: 5px; }");
+    } else {
+        frame->setStyleSheet(
+            "QFrame { "
+            "  background-color: #95a5a6; "
+            "  border-radius: 8px; "
+            "  min-width: 16px; "
+            "  max-width: 16px; "
+            "  min-height: 16px; "
+            "  max-height: 16px; "
+            "}"
+        );
+        label->setStyleSheet("QLabel { font-size: 14px; font-weight: bold; color: #7f8c8d; padding: 5px; }");
+    }
+    label->setText(text);
+}
+
+void MainWindow::updateStatusIndicator(bool running, bool clientConnected)
+{
+    if (clientConnected) {
+        statusIndicator->setStyleSheet("QLabel { color: #2ecc71; font-size: 32px; padding: 0 10px; }");
+        statusIndicator->setText("●");
+    } else if (running) {
+        statusIndicator->setStyleSheet("QLabel { color: #f39c12; font-size: 32px; padding: 0 10px; }");
+        statusIndicator->setText("●");
+    } else {
+        statusIndicator->setStyleSheet("QLabel { color: #95a5a6; font-size: 32px; padding: 0 10px; }");
+        statusIndicator->setText("●");
+    }
+}
+

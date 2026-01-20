@@ -1,21 +1,50 @@
-# Bluetooth Telemetry Server GUI
+# Bluetooth Telemetry Server - Modern UI
 
-Qt-based GUI application for the Bluetooth RFCOMM telemetry server.
+**Version 2.0** - A modernized Qt6-based GUI application for the Bluetooth RFCOMM telemetry server with contemporary design and enhanced user experience.
+
+## ✨ Modern Features
+
+### Visual Design
+- **Contemporary UI** with clean, professional styling
+- **Color-coded indicators** for all states and warnings
+- **Progress bars** for battery level and engine temperature
+- **Visual status indicators** with animated feedback
+- **Dark-themed log console** for better readability
+- **High DPI support** for modern displays
+- **Responsive layout** with proper spacing and alignment
+
+### Functional Improvements
+- **Real-time telemetry dashboard** with live updates
+- **Smart color coding** (temperature warnings, battery levels, RPM alerts)
+- **Visual state indicators** for horn, beam, turn signals, etc.
+- **Connection status** with visual feedback (stopped/running/connected)
+- **Enhanced statistics display** with formatted counters
+- **Improved logging** with timestamps and color-coded messages
+
+### User Experience
+- **Intuitive controls** with clear button states
+- **Professional typography** with modern fonts
+- **Grouped information** for better organization
+- **Accessible design** with clear visual hierarchy
+- **Error feedback** with contextual messages
 
 ## Features
-- Real-time telemetry data display
+- Real-time telemetry data display with modern widgets
 - Visual dashboard showing all vehicle parameters
-- Connection status monitoring
+- Connection status monitoring with color-coded indicators
 - Configurable echo and hex output modes
-- Live server logs
+- Live server logs with dark theme
 - Message count and byte statistics
+- Progress bars for battery and temperature
+- Smart alerts for critical values
 
 ## Requirements
 - Qt6 (Core, Gui, Widgets)
 - BlueZ libraries (`libbluetooth-dev`)
 - CMake 3.16+ or qmake
-- GCC compiler
+- GCC compiler with C++17 support
 - Root privileges for Bluetooth operations
+- Modern Linux desktop environment
 
 ## Installation
 

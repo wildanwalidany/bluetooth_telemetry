@@ -9,6 +9,9 @@
 #include <QGroupBox>
 #include <QSocketNotifier>
 #include <QTimer>
+#include <QProgressBar>
+#include <QFrame>
+#include <QPropertyAnimation>
 #include <stdint.h>
 
 /* Telemetry data structure */
@@ -54,23 +57,33 @@ private:
     
     // Telemetry display labels
     QLabel *statusLabel;
+    QLabel *statusIndicator;
     QLabel *clientAddressLabel;
     QLabel *speedLabel;
     QLabel *throttleLabel;
     QLabel *odometerLabel;
     QLabel *batteryLabel;
+    QProgressBar *batteryBar;
     QLabel *engineTempLabel;
+    QProgressBar *engineTempBar;
     QLabel *batteryTempLabel;
     QLabel *stateLabel;
+    QFrame *stateFrame;
     QLabel *modeLabel;
+    QFrame *modeFrame;
     QLabel *turnSignalLabel;
+    QFrame *turnSignalFrame;
     QLabel *nightModeLabel;
+    QFrame *nightModeFrame;
     QLabel *beamLabel;
+    QFrame *beamFrame;
     QLabel *hornLabel;
+    QFrame *hornFrame;
     QLabel *alertLabel;
     QLabel *mapsLabel;
     QLabel *msgCountLabel;
     QLabel *totalBytesLabel;
+    QPropertyAnimation *blinkAnimation;
     
     // Bluetooth server state
     int serverSocket;
@@ -86,8 +99,12 @@ private:
     
     // Helper methods
     void setupUI();
+    void applyModernStyle();
     void createTelemetryGroup(QGroupBox *&group);
     void createStatsGroup(QGroupBox *&group);
+    QFrame* createIndicatorFrame();
+    void updateIndicatorState(QFrame *frame, QLabel *label, bool active, const QString &text);
+    void updateStatusIndicator(bool running, bool clientConnected);
     bool startBluetoothServer();
     void stopBluetoothServer();
     void acceptClientConnection();
