@@ -31,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent)
       totalBytes(0),
       blinkAnimation(nullptr)
 {
-    setWindowTitle("Bluetooth Telemetry Server - Modern UI");
+    setWindowTitle("Bluetooth Telemetry Server");
     setGeometry(100, 100, 1200, 900);
     
     applyModernStyle();

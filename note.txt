@@ -1,6 +1,6 @@
 cara compile nya: gcc -o bt-client bt-client.c -lbluetooth
 
-sudo ./bt-client --addr 74:70:FD:0D:CA:45 --channel 1 --verbose
+sudo ./bt-client --addr 10:63:C8:E7:4C:DA --channel 1 --verbose
 
 sudo ./rfcomm_server -e -x
 
@@ -14,3 +14,8 @@ scan on
 pair XX:XX 
 trust XX:XX
 connect XX:XX 
+
+[raspberrypi-b]> devices
+Device 2C:CF:67:31:6D:C8 raspberrypi-a
+Device 88:A2:9E:25:94:0E raspberrypi-b
+Device 10:63:C8:E7:4C:DA archlinux
