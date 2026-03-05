@@ -47,11 +47,13 @@ private slots:
     void onServerSocketReady();
     void onClientSocketReady();
     void checkClientConnection();
+    void onOpenMap();
 
 private:
     // UI Components
     QPushButton *startButton;
     QPushButton *stopButton;
+    QPushButton *openMapButton;
     QCheckBox *echoModeCheck;
     QCheckBox *hexModeCheck;
     QTextEdit *logOutput;

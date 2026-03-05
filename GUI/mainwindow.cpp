@@ -9,6 +9,8 @@
 #include <QScrollBar>
 #include <QMessageBox>
 #include <QPalette>
+#include <QDialog>
+#include <QUrl>
 
 #include <sys/socket.h>
 #include <bluetooth/bluetooth.h>
@@ -131,14 +133,36 @@ void MainWindow::setupUI()
     hexModeCheck->setChecked(true);
     hexModeCheck->setStyleSheet("QCheckBox { font-size: 13px; padding: 5px; }");
     
+    openMapButton = new QPushButton("\U0001F30D Open IoV Map", this);
+    openMapButton->setMinimumHeight(40);
+    openMapButton->setStyleSheet(
+        "QPushButton { "
+        "  background-color: #2980b9; "
+        "  color: white; "
+        "  font-size: 14px; "
+        "  font-weight: bold; "
+        "  border: none; "
+        "  border-radius: 6px; "
+        "  padding: 10px 20px; "
+        "} "
+        "QPushButton:hover { "
+        "  background-color: #3498db; "
+        "} "
+        "QPushButton:pressed { "
+        "  background-color: #1f618d; "
+        "}"
+    );
+
     controlLayout->addWidget(startButton);
     controlLayout->addWidget(stopButton);
     controlLayout->addWidget(echoModeCheck);
     controlLayout->addWidget(hexModeCheck);
+    controlLayout->addWidget(openMapButton);
     controlLayout->addStretch();
     
     connect(startButton, &QPushButton::clicked, this, &MainWindow::onStartServer);
     connect(stopButton, &QPushButton::clicked, this, &MainWindow::onStopServer);
+    connect(openMapButton, &QPushButton::clicked, this, &MainWindow::onOpenMap);
     
     mainLayout->addWidget(controlGroup);
     
@@ -1060,3 +1084,18 @@ void MainWindow::updateMapLocation(double lat, double lng)
     );
 }
 
+void MainWindow::onOpenMap()
+{
+    QDialog *dialog = new QDialog(this);
+    dialog->setWindowTitle("IoV Map");
+    dialog->resize(1100, 750);
+
+    QVBoxLayout *layout = new QVBoxLayout(dialog);
+    layout->setContentsMargins(0, 0, 0, 0);
+
+    QWebEngineView *view = new QWebEngineView(dialog);
+    view->load(QUrl("https://dcows.berdikari.pens.ac.id/iov-map/"));
+
+    layout->addWidget(view);
+    dialog->show();
+}
