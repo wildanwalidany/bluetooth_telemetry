@@ -32,7 +32,7 @@ MainWindow::MainWindow(QWidget *parent)
       blinkAnimation(nullptr)
 {
     setWindowTitle("Bluetooth Telemetry Server");
-    setGeometry(100, 100, 1200, 900);
+    setGeometry(100, 100, 1600, 900);
     
     applyModernStyle();
     setupUI();
@@ -187,17 +187,23 @@ void MainWindow::setupUI()
     statusLayout->addStretch();
     
     mainLayout->addWidget(statusGroup);
-    
-    // Telemetry display
+
+    // ── Content area: left = telemetry/stats/log  |  right = OSM map ──────
+    QHBoxLayout *contentLayout = new QHBoxLayout();
+    contentLayout->setSpacing(15);
+
+    // ── LEFT column ─────────────────────────────────────────────────────────
+    QVBoxLayout *leftLayout = new QVBoxLayout();
+    leftLayout->setSpacing(15);
+
     QGroupBox *telemetryGroup = nullptr;
     createTelemetryGroup(telemetryGroup);
-    mainLayout->addWidget(telemetryGroup);
-    
-    // Statistics
+    leftLayout->addWidget(telemetryGroup);
+
     QGroupBox *statsGroup = nullptr;
     createStatsGroup(statsGroup);
-    mainLayout->addWidget(statsGroup);
-    
+    leftLayout->addWidget(statsGroup);
+
     // Log output
     QGroupBox *logGroup = new QGroupBox("Server Log", this);
     logGroup->setStyleSheet(
@@ -232,7 +238,76 @@ void MainWindow::setupUI()
         "}"
     );
     logLayout->addWidget(logOutput);
-    mainLayout->addWidget(logGroup);
+    leftLayout->addWidget(logGroup);
+
+    contentLayout->addLayout(leftLayout, 1);
+
+    // ── RIGHT column: OpenStreetMap via Leaflet ──────────────────────────────
+    QGroupBox *mapGroup = new QGroupBox("\U0001F4CD GPS Map (OpenStreetMap)", this);
+    mapGroup->setStyleSheet(
+        "QGroupBox { "
+        "  font-weight: bold; "
+        "  font-size: 14px; "
+        "  border: 2px solid #2980b9; "
+        "  border-radius: 8px; "
+        "  margin-top: 10px; "
+        "  padding-top: 15px; "
+        "  background-color: white; "
+        "} "
+        "QGroupBox::title { "
+        "  subcontrol-origin: margin; "
+        "  subcontrol-position: top left; "
+        "  padding: 0 10px; "
+        "  color: #2980b9; "
+        "}"
+    );
+    QVBoxLayout *mapLayout = new QVBoxLayout(mapGroup);
+    mapLayout->setContentsMargins(8, 20, 8, 8);
+
+    // Coordinates label
+    coordsLabel = new QLabel("\U0001F4CD Lat: -7.250445   Lon: 112.768845", this);
+    coordsLabel->setStyleSheet(
+        "QLabel { font-size: 12px; color: #2c3e50; padding: 4px 0; }"
+    );
+    mapLayout->addWidget(coordsLabel);
+
+    // WebEngine map view
+    mapView = new QWebEngineView(this);
+    mapView->setMinimumSize(500, 400);
+
+    const QString mapHtml = R"(
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>html,body,#map{width:100%;height:100%;margin:0;padding:0;}</style>
+</head><body>
+<div id="map"></div>
+<script>
+var initLat = -7.250445;
+var initLng = 112.768845;
+var map = L.map('map').setView([initLat, initLng], 15);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+var marker = L.marker([initLat, initLng]).addTo(map)
+    .bindPopup('<b>IoV User Location</b><br>Lat: ' + initLat + '<br>Lon: ' + initLng)
+    .openPopup();
+function updateLocation(lat, lng) {
+    marker.setLatLng([lat, lng]);
+    marker.setPopupContent('<b>IoV User Location</b><br>Lat: ' + lat.toFixed(6) + '<br>Lon: ' + lng.toFixed(6));
+    map.setView([lat, lng], map.getZoom());
+}
+</script>
+</body></html>
+)";
+    mapView->setHtml(mapHtml);
+    mapLayout->addWidget(mapView, 1);
+
+    contentLayout->addWidget(mapGroup, 1);
+    mainLayout->addLayout(contentLayout);
 }
 
 void MainWindow::createTelemetryGroup(QGroupBox *&group)
@@ -964,5 +1039,17 @@ void MainWindow::updateStatusIndicator(bool running, bool clientConnected)
         statusIndicator->setStyleSheet("QLabel { color: #95a5a6; font-size: 32px; padding: 0 10px; }");
         statusIndicator->setText("●");
     }
+}
+
+void MainWindow::updateMapLocation(double lat, double lng)
+{
+    coordsLabel->setText(
+        QString("\U0001F4CD Lat: %1   Lon: %2")
+            .arg(lat, 0, 'f', 6)
+            .arg(lng, 0, 'f', 6)
+    );
+    mapView->page()->runJavaScript(
+        QString("updateLocation(%1, %2);").arg(lat, 0, 'f', 6).arg(lng, 0, 'f', 6)
+    );
 }
 

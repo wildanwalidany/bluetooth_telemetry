@@ -12,6 +12,7 @@
 #include <QProgressBar>
 #include <QFrame>
 #include <QPropertyAnimation>
+#include <QWebEngineView>
 #include <stdint.h>
 
 /* Telemetry data structure */
@@ -82,9 +83,11 @@ private:
     QLabel *alertLabel;
     QLabel *mapsLabel;
     QLabel *msgCountLabel;
+    QLabel *coordsLabel;
     QLabel *totalBytesLabel;
     QPropertyAnimation *blinkAnimation;
-    
+    QWebEngineView *mapView;
+
     // Bluetooth server state
     int serverSocket;
     int clientSocket;
@@ -111,6 +114,7 @@ private:
     void handleClientData();
     int parseTelemetry(const uint8_t *data, size_t len, telemetry_t *telem);
     void displayTelemetry(const telemetry_t *telem);
+    void updateMapLocation(double lat, double lng);
     void logMessage(const QString &msg);
     void logHex(const uint8_t *data, size_t len);
     QString getTimestamp();
