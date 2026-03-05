@@ -285,19 +285,19 @@ void MainWindow::setupUI()
 </head><body>
 <div id="map"></div>
 <script>
-var initLat = -7.250445;
-var initLng = 112.768845;
+var initLat = -7.276744410794393;
+var initLng = 112.79316024031485;
 var map = L.map('map').setView([initLat, initLng], 15);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 }).addTo(map);
 var carIcon = L.divIcon({
-    html: '<div style="font-size:28px;line-height:1;transform:translate(-50%,-50%)">🚗</div>',
-    iconSize: [0, 0],
-    iconAnchor: [0, 0],
-    popupAnchor: [14, -14],
-    className: ''
+    html: '<div style="font-size:28px;line-height:1;">&#x1F697;</div>',
+    className: '',
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    popupAnchor: [0, -16]
 });
 var marker = L.marker([initLat, initLng], {icon: carIcon}).addTo(map)
     .bindPopup('<b>IoV User Location</b><br>Lat: ' + initLat + '<br>Lon: ' + initLng)
