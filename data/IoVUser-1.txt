@@ -6,6 +6,6 @@ There were no significant incidents today on the road.
 
 Road conditions are comfortable this morning. 
 
--7.250445 
+-7.276744410794393
 
-112.768845
+112.79316024031485

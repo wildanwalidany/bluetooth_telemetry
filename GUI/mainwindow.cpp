@@ -243,7 +243,7 @@ void MainWindow::setupUI()
     contentLayout->addLayout(leftLayout, 1);
 
     // ── RIGHT column: OpenStreetMap via Leaflet ──────────────────────────────
-    QGroupBox *mapGroup = new QGroupBox("\U0001F4CD GPS Map (OpenStreetMap)", this);
+    QGroupBox *mapGroup = new QGroupBox("\U0001F4CD GPS Map", this);
     mapGroup->setStyleSheet(
         "QGroupBox { "
         "  font-weight: bold; "
@@ -292,7 +292,14 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 }).addTo(map);
-var marker = L.marker([initLat, initLng]).addTo(map)
+var carIcon = L.divIcon({
+    html: '<div style="font-size:28px;line-height:1;transform:translate(-50%,-50%)">🚗</div>',
+    iconSize: [0, 0],
+    iconAnchor: [0, 0],
+    popupAnchor: [14, -14],
+    className: ''
+});
+var marker = L.marker([initLat, initLng], {icon: carIcon}).addTo(map)
     .bindPopup('<b>IoV User Location</b><br>Lat: ' + initLat + '<br>Lon: ' + initLng)
     .openPopup();
 function updateLocation(lat, lng) {
@@ -312,7 +319,7 @@ function updateLocation(lat, lng) {
 
 void MainWindow::createTelemetryGroup(QGroupBox *&group)
 {
-    group = new QGroupBox("Real-Time Telemetry", this);
+    group = new QGroupBox("Car Telemetry Data", this);
     group->setStyleSheet(
         "QGroupBox { "
         "  font-weight: bold; "

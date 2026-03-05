@@ -19,3 +19,6 @@ connect XX:XX
 Device 2C:CF:67:31:6D:C8 raspberrypi-a
 Device 88:A2:9E:25:94:0E raspberrypi-b
 Device 10:63:C8:E7:4C:DA archlinux
+
+cd /home/meldst0rm2/Thesis/Program/bluetooth_telemetry/GUI/build
+make -j$(nproc)
